@@ -1,3 +1,5 @@
+import cats.kernel.Semigroup
+
 import scala.annotation.tailrec
 
 sealed trait LinkedList[+A]
@@ -98,5 +100,32 @@ object LinkedList {
     foldRight(list, Nil:LinkedList[A])((a, xs) => f(a) match {
       case true => Cons(a, xs)
       case false => xs
-  })
+    })
+
+  def zipWith[A](list1: LinkedList[A], list2: LinkedList[A])
+                (implicit s: Semigroup[A]): LinkedList[A] = {
+    def zipWithRec(
+      l1: LinkedList[A], l2: LinkedList[A], acc: LinkedList[A]): LinkedList[A] =
+      l1 match {
+        case Nil => l2 match {
+          case Nil => acc
+          case Cons(_, _) => append(acc, l2)
+        }
+        case Cons(x1, xs1) => l2 match {
+          case Nil => append(acc, l1)
+          case Cons(x2, xs2) => zipWithRec(
+            xs1, xs2, append(acc, LinkedList(s.combine(x1, x2))))
+        }
+      }
+    zipWithRec(list1, list2, Nil)
+  }
+
+  // TODO come back to this when I understand typeclasses better
+  // Would be nice to use Numeric
+  def additionSemigroup: Semigroup[Int] = (x: Int, y: Int) => x + y
+  def zipWithSum[Int](list1: LinkedList[Int], list2: LinkedList[Int])
+                     (implicit semigroup: Semigroup[Int]): LinkedList[Int] = {
+    zipWith(list1, list2)
+  }
 }
+

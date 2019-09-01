@@ -62,7 +62,10 @@ class Ch3LinkedListSpec extends Specification with ScalaCheck with DataTables {
 
     "product a list of 2 elements equals the of those 2" >> {
       prop { (a: Int, b: Int) => product(Cons(a, Cons(b, Nil))) mustEqual a * b }
-      prop { (a: BigDecimal, b: BigDecimal) => product(Cons(a, Cons(b, Nil))) mustEqual a * b }
+      prop {
+        (a: BigDecimal, b: BigDecimal) => product(Cons(a, Cons(b, Nil))) must
+          beCloseTo(a * b within 2.significantFigures)
+      }
       // -128 + -1 overflows, but both sides should overflow the same way, for some
       // reason that doesn't happen....
 //      prop { (a: Byte, b: Byte) => product(Cons(a, Cons(b, Nil))) mustEqual a * b }
@@ -132,11 +135,11 @@ class Ch3LinkedListSpec extends Specification with ScalaCheck with DataTables {
     }
   }
 
-//  "#append" >> {
-//
-//  }
-
   "#map" >> {
+    "add 1 to each" >> {
+      LinkedList.map(LinkedList(1,2,3))(_ + 1) mustEqual LinkedList(2,3,4)
+    }
+
     "identity leaves list unchanged" >> {
       prop {
         a: Seq[Int] => LinkedList.map(LinkedList(a: _*))(i => i) mustEqual
@@ -145,9 +148,17 @@ class Ch3LinkedListSpec extends Specification with ScalaCheck with DataTables {
     }
   }
 
-//  "flatMap" >> {
-//
-//  }
+  "flatMap" >> {
+    "with identity gives flatten" >> {
+      prop {
+        (a: Seq[Int], b: Seq[Int]) => {
+          val nestedList = LinkedList(LinkedList(a: _*), LinkedList(b: _*))
+          flatten(nestedList) mustEqual
+          flatMap(nestedList)(identity)
+        }
+      }
+    }
+  }
 
   "#where" >> {
     "only true values remain" >> {
@@ -156,6 +167,30 @@ class Ch3LinkedListSpec extends Specification with ScalaCheck with DataTables {
 
         LinkedList(trues: _*) mustEqual where(all)(_ == true)
       }).setGens(listOfTrues, listOfFalses)
+    }
+  }
+
+  "#zipWithSum" >> {
+    "length should always equal the longest of the lists" >> {
+
+      prop {
+        (l1: Seq[Int], l2: Seq[Int]) => {
+          len(zipWithSum(LinkedList(l1: _*), LinkedList(l2: _*))(additionSemigroup)) mustEqual
+            scala.math.max(l1.size, l2.size)
+        }
+      }
+
+      "some examples" in {
+          "l1"              | "l2"              | "res"             |>
+          LinkedList(1,2,3) ! LinkedList(1,2,3) ! LinkedList(2,4,6) |
+          LinkedList(1,2)   ! LinkedList(1,2,3) ! LinkedList(2,4,3) |
+          LinkedList(1,2,3) ! LinkedList(1,2)   ! LinkedList(2,4,3) |
+          Nil               ! LinkedList(1,1,1) ! LinkedList(1,1,1) |
+          LinkedList(1,1,1) ! Nil               ! LinkedList(1,1,1) | {
+          (l1: LinkedList[Int], l2: LinkedList[Int], res: LinkedList[Int]) =>
+            zipWithSum(l1, l2)(additionSemigroup) mustEqual res
+        }
+      }
     }
   }
 }
