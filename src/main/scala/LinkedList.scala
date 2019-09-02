@@ -102,6 +102,21 @@ object LinkedList {
       case false => xs
     })
 
+  def zipWithArbitrary[A,B,C](list1: LinkedList[A], list2: LinkedList[B])
+                             (f: (A,B) => C): LinkedList[C] = {
+    def zipWithRec(
+      l1: LinkedList[A], l2: LinkedList[B], acc: LinkedList[C]): LinkedList[C] =
+      l1 match {
+        case Nil => acc
+        case Cons(x1, xs1) => l2 match {
+          case Nil => acc
+          case Cons(x2, xs2) => zipWithRec(
+            xs1, xs2, append(acc, LinkedList(f(x1, x2))))
+        }
+      }
+    zipWithRec(list1, list2, Nil)
+  }
+
   def zipWith[A](list1: LinkedList[A], list2: LinkedList[A])
                 (implicit s: Semigroup[A]): LinkedList[A] = {
     def zipWithRec(
@@ -126,6 +141,18 @@ object LinkedList {
   def zipWithSum[Int](list1: LinkedList[Int], list2: LinkedList[Int])
                      (implicit semigroup: Semigroup[Int]): LinkedList[Int] = {
     zipWith(list1, list2)
+  }
+
+  def forAll[A](list: LinkedList[A])(f: A => Boolean): Boolean =
+    foldLeft(list, true)((acc, el) => f(el) && acc)
+
+  def hasSubSeq[A](list: LinkedList[A], subList: LinkedList[A]): Boolean = list match {
+    case Nil => false
+    case l @ Cons(_, xs) =>
+      if (forAll(zipWithArbitrary(l, subList)(_ == _))(identity))
+        true
+      else
+        hasSubSeq(xs, subList)
   }
 }
 
