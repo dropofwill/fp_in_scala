@@ -7,6 +7,10 @@ case object Nil extends LinkedList[Nothing]
 case class Cons[+A](head: A, tail: LinkedList[A]) extends LinkedList[A]
 
 object LinkedList {
+  def apply[A](as: A*): LinkedList[A] =
+    if (as.isEmpty) Nil
+    else Cons(as.head, apply(as.tail: _*))
+
   @tailrec
   def foldLeft[A,B](list: LinkedList[A], acc: B)(f: (B, A) => B): B = list match {
     case Nil => acc
@@ -42,10 +46,6 @@ object LinkedList {
     case Nil => numeric.one
     case Cons(x, xs) => numeric.times(x, product(xs))
   }
-
-  def apply[A](as: A*): LinkedList[A] =
-    if (as.isEmpty) Nil
-    else Cons(as.head, apply(as.tail: _*))
 
   def dropWhile[A](list: LinkedList[A], f: A => Boolean): LinkedList[A] =
     list match {
